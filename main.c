@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
-#include <xmllite.h>
 
 
 struct node {
@@ -48,9 +47,8 @@ void incr(struct node **root, char *w) {
         incr(&((*root)->l),w);
 }
 
-
+//Laufe durch Baum und lese Wörter mit count = 1 aus
 void traverse_search(struct node *r) {
-    //TODO: Laufe durch Baum und lese Wörter mit count = 1 aus
     if (r == NULL)		//Baum leer?
         return;
     traverse_search(r->l);		//laufe linken Teilbaum durch
@@ -60,13 +58,29 @@ void traverse_search(struct node *r) {
     traverse_search(r->r);				//laufe rechten Teilbaum durch
 }
 
-int isNumeric (const char * s)
-{
-    if (s == NULL || *s == '\0' || isspace(*s))
-        return 0;
-    char * p;
-    strtod(s, &p);
-    return *p == '\0';
+void words(char *s, char *end) {
+    int state = 0;
+    char c;
+    char *start = s;
+
+    while (s <= end) {
+        c = *s;
+        if (isalpha(c)) {
+            if (!state) {
+                start = s;
+                state = 1;
+            }
+        } else {
+            state = 0;
+            if (start) {
+                *s = '\0';
+                incr(&tree,start);
+                *s = c;
+            }
+            start = NULL;
+        }
+        s++;
+    }
 }
 
 //Read authors und editors
@@ -85,30 +99,17 @@ char *read_file(char *file_name){
         exit(EXIT_FAILURE);
     }
 
-    char delimiter[] = " <>-(){}'\\,\"$;[]";
-    bool begin_tag = false;
+    char *start = NULL;
+    char *end = NULL;
     while (getline(&line, &len, fp) != -1) {
-        begin_tag = false;
-        word = strtok(line, delimiter);
-        while( word != NULL ) {
-            if(strcmp(word, "author") == 0 || strcmp(word, "editor") == 0){
-                begin_tag = true;
-                //get next word
-                word = strtok(NULL, delimiter);
-            }
-            else if(strcmp(word, "/author") == 0 || strcmp(word, "/editor") == 0){
-                begin_tag = false;
-            }
+        //Suche <author und <editor in der Zeile
+        if (strstr(line, "<author") != NULL || strstr(line, "<editor") != NULL){
+            start = strchr(line, '>');       //erstes Vorkommen von >
+            end = strrchr(line, '<');        //letztes Vorkommen von <
 
-            if(begin_tag){
-                if (!isNumeric(word)){
-                    //printf( " %s\n", word );
-                    incr(&tree,word);
-                }
-            }
-
-            //get next word
-            word = strtok(NULL, delimiter);
+            //konvertiere das Intervall in Wörter
+            start++;      //Zeichen hinter >
+            words(start, end);
         }
         line = NULL;
     }
