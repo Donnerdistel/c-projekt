@@ -1,0 +1,3 @@
+cat dblp.xml/dblp.xml | grep "<editor" | grep -n "title"
+
+31513:<editor>Alan F. Smeaton</editor><title>2006 TREC Video Retrieval Evaluation, TRECVID 2006, Gaithersburg, MD, USA, November 13-14, 2006</title>
